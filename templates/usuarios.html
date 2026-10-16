@@ -1,0 +1,161 @@
+
+{% extends 'base.html' %}
+
+{% block titulo_pagina %}
+Usuarios
+{% endblock %}
+
+{% block contenido %}
+
+<div class="heading">
+    <h1>Administración de usuarios</h1>
+
+    <p>
+        Solo el administrador puede crear y
+        administrar personal.
+    </p>
+</div>
+
+<section class="panel">
+
+    <h2>Agregar usuario</h2>
+
+    <form method="post" class="usuario-form">
+
+        <input type="hidden"
+               name="_csrf"
+               value="{{ csrf_token() }}">
+
+        <div class="field">
+
+            <label for="usuario">Nombre de usuario</label>
+
+            <input type="text"
+                   id="usuario"
+                   name="usuario"
+                   minlength="3"
+                   maxlength="32"
+                   pattern="[A-Za-z0-9_.-]+"
+                   required>
+
+        </div>
+
+        <div class="field">
+
+            <label for="contrasena">
+                Contraseña (mínimo 12 caracteres)
+            </label>
+
+            <input type="password"
+                   id="contrasena"
+                   name="contrasena"
+                   minlength="12"
+                   autocomplete="new-password"
+                   required>
+
+        </div>
+
+        <div class="field">
+
+            <label for="rol">Rol</label>
+
+            <select id="rol" name="rol">
+
+                <option value="EMPLEADO">
+                    Empleado
+                </option>
+
+                <option value="ADMIN">
+                    Administrador
+                </option>
+
+            </select>
+
+        </div>
+
+        <button type="submit" class="btn primary">
+            Registrar usuario
+        </button>
+
+    </form>
+
+</section>
+
+<section class="panel">
+
+    <h2>Usuarios registrados</h2>
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>USUARIO</th>
+                    <th>ROL</th>
+                    <th>ESTADO</th>
+                    <th>ACCIÓN</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for u in usuarios %}
+
+                <tr>
+
+                    <td>{{ u.usuario }}</td>
+
+                    <td>{{ u.rol }}</td>
+
+                    <td>
+                        {{ 'Activo' if u.activo else 'Desactivado' }}
+                    </td>
+
+                    <td>
+
+                        {% if u.rol == 'EMPLEADO' %}
+
+                        <form method="post"
+                              action="{{ url_for('cambiar_estado_usuario', usuario_id=u.id) }}">
+
+                            <input type="hidden"
+                                   name="_csrf"
+                                   value="{{ csrf_token() }}">
+
+                            <button type="submit"
+                                    class="small-action {{ 'danger' if u.activo else '' }}">
+                                {{ 'Desactivar' if u.activo else 'Activar' }}
+                            </button>
+
+                        </form>
+
+                        {% else %}
+
+                        —
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="4">
+                        Sin usuarios registrados.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+{% endblock %}

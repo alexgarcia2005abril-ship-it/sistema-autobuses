@@ -1,0 +1,87 @@
+
+<section class="panel">
+
+    <h2>Seleccionar ruta, fecha y hora de salida</h2>
+
+    <p>
+        Selecciona una salida que haya sido programada
+        por el administrador.
+    </p>
+
+    <form method="get"
+          class="selector-salida"
+          action="{{ request.path }}">
+
+        <div class="field">
+
+            <label for="ruta">Ruta de autobús</label>
+
+            <select id="ruta" name="ruta" required>
+
+                <option value="">Selecciona la ruta</option>
+
+                {% for codigo, info in rutas.items() %}
+
+                <option value="{{ codigo }}"
+                    {% if ruta_elegida == codigo %}
+                    selected
+                    {% endif %}>
+                    {{ info.nombre }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <div class="field">
+
+            <label for="fecha">Fecha de salida</label>
+
+            <input type="date"
+                   id="fecha"
+                   name="fecha"
+                   value="{{ fecha_elegida }}"
+                   required>
+
+        </div>
+
+        <div class="field">
+
+            <label for="hora">Hora de salida</label>
+
+            <input type="time"
+                   id="hora"
+                   name="hora"
+                   value="{{ hora_elegida }}"
+                   required>
+
+        </div>
+
+        <button type="submit" class="btn primary">
+            Consultar salida
+        </button>
+
+    </form>
+
+    {% if consulta_error %}
+
+    <div class="alert error">
+        {{ consulta_error }}
+    </div>
+
+    {% endif %}
+
+    {% if viaje %}
+
+    <div class="alert success">
+        Salida:
+        {{ rutas[viaje.codigo_ruta].nombre }}
+        · {{ viaje.salida|fecha }}
+        · {{ viaje.capacidad }} lugares
+    </div>
+
+    {% endif %}
+
+</section>

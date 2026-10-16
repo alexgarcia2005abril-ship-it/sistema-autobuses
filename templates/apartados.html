@@ -1,1 +1,18 @@
-{% extends 'base.html' %}{% block titulo_pagina %}Apartar lugares{% endblock %}{% block contenido %}{% set encabezado='Apartar lugares' %}{% set descripcion='Reserva temporalmente un asiento para un pasajero.' %}{% set accion='registrar el apartado' %}{% set texto_boton='Apartar asiento' %}{% include '_operacion.html' %}{% endblock %}
+
+{% extends 'base.html' %}
+
+{% block titulo_pagina %}
+Apartar lugares
+{% endblock %}
+
+{% block contenido %}
+
+{% set encabezado = 'Apartar lugares' %}
+
+{% set descripcion = 'Solo administrador: selecciona una salida programada y reserva un asiento.' %}
+
+{% set texto_boton = 'Apartar asiento' %}
+
+{% include '_operacion.html' %}
+
+{% endblock %}

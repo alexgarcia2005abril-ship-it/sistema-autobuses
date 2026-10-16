@@ -8,21 +8,27 @@ Boletos vendidos
 {% block contenido %}
 
 <div class="heading">
-    <div>
-        <h1>Boletos vendidos</h1>
-        <p>Consulta las ventas registradas.</p>
-    </div>
+
+    <h1>Boletos vendidos</h1>
+
+    <p>
+        Consulta ventas y cancela boletos.
+        Las cancelaciones liberan el asiento.
+    </p>
+
 </div>
 
 <section class="panel">
 
     <div class="panel-heading">
-        <h2>Historial de ventas</h2>
+
+        <h2>Historial de ventas activas</h2>
 
         <input type="text"
                class="search"
                data-filter-table="ventas"
                placeholder="Buscar boleto...">
+
     </div>
 
     <div class="table-scroll">
@@ -33,12 +39,12 @@ Boletos vendidos
                 <tr>
                     <th>FOLIO</th>
                     <th>PASAJERO</th>
-                    <th>TELÉFONO</th>
                     <th>RUTA</th>
+                    <th>SALIDA</th>
                     <th>DESTINO</th>
                     <th>ASIENTO</th>
                     <th>PRECIO</th>
-                    <th>ESTADO</th>
+                    <th>ACCIÓN</th>
                 </tr>
             </thead>
 
@@ -48,11 +54,11 @@ Boletos vendidos
 
                 <tr>
 
-                    <td>#{{ '%05d'|format(b.id) }}</td>
+                    <td>
+                        #{{ '%05d'|format(b.id) }}
+                    </td>
 
                     <td>{{ b.pasajero }}</td>
-
-                    <td>{{ b.telefono }}</td>
 
                     <td>
                         {% if b.codigo_ruta in rutas %}
@@ -61,6 +67,8 @@ Boletos vendidos
                             Ruta anterior
                         {% endif %}
                     </td>
+
+                    <td>{{ b.salida|fecha }}</td>
 
                     <td>
                         {{ b.destino_boleto or b.destino_final }}
@@ -72,12 +80,58 @@ Boletos vendidos
                         {% if b.precio_boleto is not none %}
                             ${{ '%.2f'|format(b.precio_boleto) }}
                         {% else %}
-                            Sin registro
+                            Sin precio
                         {% endif %}
                     </td>
 
                     <td>
-                        <span class="pill sold-pill">Vendido</span>
+
+                        <details class="cancelar-detalle">
+
+                            <summary class="small-action danger">
+                                Cancelar
+                            </summary>
+
+                            <form method="post"
+                                  action="{{ url_for('cancelar_boleto', boleto_id=b.id) }}"
+                                  onsubmit="return confirm('¿Confirmas la cancelación del boleto?')">
+
+                                <input type="hidden"
+                                       name="_csrf"
+                                       value="{{ csrf_token() }}">
+
+                                <label>Motivo</label>
+
+                                <input type="text"
+                                       name="motivo"
+                                       minlength="5"
+                                       maxlength="300"
+                                       placeholder="Motivo de la cancelación"
+                                       required>
+
+                                <label>¿Se devolvió el dinero?</label>
+
+                                <select name="reembolso">
+
+                                    <option value="no">
+                                        No hubo reembolso
+                                    </option>
+
+                                    <option value="completo">
+                                        Reembolso completo
+                                    </option>
+
+                                </select>
+
+                                <button type="submit"
+                                        class="small-action danger">
+                                    Confirmar cancelación
+                                </button>
+
+                            </form>
+
+                        </details>
+
                     </td>
 
                 </tr>

@@ -1,47 +1,49 @@
 
+import os
 import sqlite3
-
 from pathlib import Path
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 from flask import g
+from werkzeug.security import generate_password_hash
 
-from base_de_datos.rutas import RUTAS
-
-
-DB_PATH = (
-    Path(__file__).resolve().parent
-    / "central_autobuses.db"
+DB_PATH = Path(
+    os.environ.get(
+        "DATABASE_PATH",
+        str(
+            Path(__file__).resolve().parent
+            / "central_autobuses.db"
+        )
+    )
 )
 
 
 def obtener_db():
     if "db" not in g:
-        conexion = sqlite3.connect(
-            DB_PATH,
+        con = sqlite3.connect(
+            str(DB_PATH),
             timeout=15
         )
-
-        conexion.row_factory = sqlite3.Row
-
-        conexion.execute(
-            "PRAGMA foreign_keys = ON"
-        )
-
-        conexion.execute(
-            "PRAGMA busy_timeout = 15000"
-        )
-
-        g.db = conexion
+        con.row_factory = sqlite3.Row
+        con.execute("PRAGMA foreign_keys = ON")
+        con.execute("PRAGMA busy_timeout = 15000")
+        g.db = con
 
     return g.db
 
 
 def cerrar_db(error=None):
-    db = g.pop("db", None)
+    con = g.pop("db", None)
 
-    if db is not None:
-        db.close()
+    if con is not None:
+        con.close()
+
+
+def _columnas(con, tabla):
+    return {
+        fila[1]
+        for fila in con.execute(
+            f"PRAGMA table_info({tabla})"
+        )
+    }
 
 
 def inicializar_db():
@@ -51,14 +53,12 @@ def inicializar_db():
     )
 
     con = sqlite3.connect(
-        DB_PATH,
+        str(DB_PATH),
         timeout=15
     )
 
     try:
-        con.execute(
-            "PRAGMA foreign_keys = ON"
-        )
+        con.execute("PRAGMA foreign_keys = ON")
 
         con.executescript("""
             CREATE TABLE IF NOT EXISTS viajes (
@@ -78,52 +78,32 @@ def inicializar_db():
                 pasajero TEXT NOT NULL,
                 telefono TEXT NOT NULL,
                 estado TEXT NOT NULL
-                    CHECK(estado IN ('VENDIDO', 'APARTADO')),
+                    CHECK(estado IN ('VENDIDO','APARTADO')),
                 creado_en TEXT NOT NULL DEFAULT
                     (datetime('now','localtime')),
                 UNIQUE(viaje_id, asiento)
             );
         """)
 
-        con.execute("BEGIN IMMEDIATE")
-
-        columnas_viajes = {
-            fila[1]
-            for fila in con.execute(
-                "PRAGMA table_info(viajes)"
-            )
-        }
-
-        if "codigo_ruta" not in columnas_viajes:
+        if "codigo_ruta" not in _columnas(con, "viajes"):
             con.execute("""
                 ALTER TABLE viajes
                 ADD COLUMN codigo_ruta TEXT
             """)
 
-        columnas_boletos = {
-            fila[1]
-            for fila in con.execute(
-                "PRAGMA table_info(boletos)"
-            )
-        }
+        columnas_nuevas = (
+            ("destino_boleto", "TEXT"),
+            ("precio_boleto", "REAL"),
+            ("cobrado_en", "TEXT"),
+            ("creado_por", "INTEGER")
+        )
 
-        if "destino_boleto" not in columnas_boletos:
-            con.execute("""
-                ALTER TABLE boletos
-                ADD COLUMN destino_boleto TEXT
-            """)
-
-        if "precio_boleto" not in columnas_boletos:
-            con.execute("""
-                ALTER TABLE boletos
-                ADD COLUMN precio_boleto REAL
-            """)
-
-        if "cobrado_en" not in columnas_boletos:
-            con.execute("""
-                ALTER TABLE boletos
-                ADD COLUMN cobrado_en TEXT
-            """)
+        for columna, tipo in columnas_nuevas:
+            if columna not in _columnas(con, "boletos"):
+                con.execute(
+                    f"ALTER TABLE boletos "
+                    f"ADD COLUMN {columna} {tipo}"
+                )
 
         con.execute("""
             UPDATE boletos
@@ -132,69 +112,82 @@ def inicializar_db():
               AND cobrado_en IS NULL
         """)
 
-        con.execute("""
+        con.executescript("""
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario TEXT NOT NULL
+                    COLLATE NOCASE UNIQUE,
+                password_hash TEXT NOT NULL,
+                rol TEXT NOT NULL
+                    CHECK(rol IN ('ADMIN','EMPLEADO')),
+                activo INTEGER NOT NULL DEFAULT 1,
+                creado_en TEXT NOT NULL
+                    DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS cancelaciones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                boleto_id INTEGER NOT NULL,
+                viaje_id INTEGER NOT NULL
+                    REFERENCES viajes(id),
+                asiento INTEGER NOT NULL,
+                pasajero TEXT NOT NULL,
+                telefono TEXT NOT NULL,
+                estado_anterior TEXT NOT NULL,
+                destino_boleto TEXT,
+                precio_boleto REAL,
+                creado_en TEXT,
+                cobrado_en TEXT,
+                cancelado_en TEXT NOT NULL,
+                cancelado_por INTEGER
+                    REFERENCES usuarios(id),
+                motivo TEXT NOT NULL,
+                reembolso REAL NOT NULL DEFAULT 0
+            );
+
             CREATE INDEX IF NOT EXISTS idx_boletos_viaje
-            ON boletos(viaje_id)
-        """)
+            ON boletos(viaje_id);
 
-        con.execute("""
             CREATE INDEX IF NOT EXISTS idx_viajes_ruta
-            ON viajes(codigo_ruta, salida)
-        """)
+            ON viajes(codigo_ruta, salida);
 
-        con.execute("""
             CREATE INDEX IF NOT EXISTS idx_boletos_cobrado
-            ON boletos(estado, cobrado_en)
+            ON boletos(estado,cobrado_en);
+
+            CREATE INDEX IF NOT EXISTS idx_cancelaciones_fecha
+            ON cancelaciones(cancelado_en);
         """)
 
-        manana = (
-            datetime.now(
-                ZoneInfo("America/Mexico_City")
-            ).date()
-            + timedelta(days=1)
+        nombre = os.environ.get(
+            "ADMIN_USERNAME", ""
+        ).strip()
+
+        clave = os.environ.get(
+            "ADMIN_PASSWORD", ""
         )
 
-        for codigo, ruta in RUTAS.items():
+        administradores = con.execute("""
+            SELECT COUNT(*)
+            FROM usuarios
+            WHERE rol = 'ADMIN'
+        """).fetchone()[0]
 
-            fecha_salida = (
-                f"{manana.isoformat()}"
-                f"T{ruta['hora_demo']}"
-            )
-
-            existe = con.execute("""
-                SELECT id
-                FROM viajes
-                WHERE codigo_ruta = ?
-                  AND salida = ?
+        if (
+            administradores == 0
+            and nombre
+            and len(clave) >= 12
+        ):
+            con.execute("""
+                INSERT INTO usuarios (
+                    usuario,
+                    password_hash,
+                    rol
+                )
+                VALUES (?, ?, 'ADMIN')
             """, (
-                codigo,
-                fecha_salida
-            )).fetchone()
-
-            if existe is None:
-
-                precio_final = ruta["destinos"][
-                    ruta["destino_final"]
-                ]
-
-                con.execute("""
-                    INSERT INTO viajes (
-                        origen,
-                        destino,
-                        salida,
-                        precio,
-                        capacidad,
-                        codigo_ruta
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (
-                    "Teposcolula",
-                    ruta["destino_final"],
-                    fecha_salida,
-                    precio_final,
-                    40,
-                    codigo
-                ))
+                nombre,
+                generate_password_hash(clave)
+            ))
 
         con.commit()
 

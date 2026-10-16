@@ -14,14 +14,18 @@ document.querySelectorAll(
         button.classList.add("selected");
 
         const asiento = document.getElementById("asiento");
-        const mostrar = document.getElementById("asiento-mostrar");
+
+        const mostrar = document.getElementById(
+            "asiento-mostrar"
+        );
 
         if (asiento) {
             asiento.value = button.dataset.asiento;
         }
 
         if (mostrar) {
-            mostrar.value = "Asiento #" + button.dataset.asiento;
+            mostrar.value =
+                "Asiento #" + button.dataset.asiento;
         }
 
     });
@@ -30,50 +34,87 @@ document.querySelectorAll(
 
 
 const destino = document.getElementById("destino");
-const precioTotal = document.getElementById("precio-total");
+
+const precioTotal = document.getElementById(
+    "precio-total"
+);
+
 
 function actualizarPrecio() {
 
-    if (!destino || !precioTotal) return;
+    if (!destino || !precioTotal) {
+        return;
+    }
 
-    const opcion = destino.options[destino.selectedIndex];
+    const opcion = destino.options[
+        destino.selectedIndex
+    ];
 
-    const precio = Number(opcion?.dataset.precio || 0);
+    const precio = Number(
+        opcion?.dataset.precio || 0
+    );
 
     precioTotal.textContent =
         "$" + precio.toFixed(2) + " MXN";
+
 }
+
 
 if (destino) {
-    destino.addEventListener("change", actualizarPrecio);
+
+    destino.addEventListener(
+        "change",
+        actualizarPrecio
+    );
+
     actualizarPrecio();
+
 }
 
 
-const formulario = document.getElementById("form-operacion");
+const formulario = document.getElementById(
+    "form-operacion"
+);
+
 
 if (formulario) {
 
-    formulario.addEventListener("submit", event => {
+    formulario.addEventListener(
+        "submit",
+        event => {
 
-        const asiento = document.getElementById("asiento");
+            const asiento = document.getElementById(
+                "asiento"
+            );
 
-        if (!asiento || !asiento.value) {
-            event.preventDefault();
-            alert("Selecciona un asiento disponible.");
-            return;
+            if (!asiento || !asiento.value) {
+
+                event.preventDefault();
+
+                alert(
+                    "Selecciona un asiento disponible."
+                );
+
+                return;
+            }
+
+            if (!destino?.value) {
+
+                event.preventDefault();
+
+                alert("Selecciona un destino.");
+
+            }
+
         }
+    );
 
-        if (destino && !destino.value) {
-            event.preventDefault();
-            alert("Selecciona un destino.");
-        }
-
-    });
 }
 
 
-document.querySelectorAll("[data-filter-table]").forEach(input => {
+document.querySelectorAll(
+    "[data-filter-table]"
+).forEach(input => {
 
     input.addEventListener("input", () => {
 
@@ -83,9 +124,13 @@ document.querySelectorAll("[data-filter-table]").forEach(input => {
             input.dataset.filterTable
         );
 
-        if (!tabla) return;
+        if (!tabla) {
+            return;
+        }
 
-        tabla.querySelectorAll("tbody tr").forEach(fila => {
+        tabla.querySelectorAll(
+            "tbody tr"
+        ).forEach(fila => {
 
             fila.hidden = !fila.textContent
                 .toLowerCase()

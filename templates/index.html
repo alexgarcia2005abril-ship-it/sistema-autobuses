@@ -1,15 +1,80 @@
+
 {% extends 'base.html' %}
-{% block titulo_pagina %}Inicio{% endblock %}
+
+{% block titulo_pagina %}
+Inicio
+{% endblock %}
+
 {% block contenido %}
+
 <section class="contenedor-inicio">
+
     <div class="logo-autobus" aria-hidden="true">🚌</div>
+
     <h2>Bienvenido a la Central de Autobuses</h2>
-    <p>Sistema de administración de boletos, reservaciones y disponibilidad de asientos.</p>
-    <div class="botones-inicio">
-        <a class="btn primary" href="{{ url_for('venta') }}">Vender Boleto</a>
-        <a class="btn primary" href="{{ url_for('apartados') }}">Apartar Lugar</a>
-        <a class="btn primary" href="{{ url_for('boletos') }}">Boletos Vendidos</a>
-        <a class="btn primary" href="{{ url_for('disponibilidad') }}">Ver Asientos</a>
+
+    <p>
+        Ventas y disponibilidad de asientos
+        para nuestras rutas.
+    </p>
+
+    <div class="mini-stats">
+
+        <div>
+            <strong>{{ resumen.vendidos }}</strong>
+            <span>Vendidos activos</span>
+        </div>
+
+        <div>
+            <strong>{{ resumen.apartados }}</strong>
+            <span>Apartados</span>
+        </div>
+
+        <div>
+            <strong>{{ viajes|length }}</strong>
+            <span>Salidas futuras programadas</span>
+        </div>
+
     </div>
+
+    <div class="botones-inicio">
+
+        <a class="btn primary"
+           href="{{ url_for('venta') }}">
+            Vender boleto
+        </a>
+
+        <a class="btn primary"
+           href="{{ url_for('boletos') }}">
+            Boletos vendidos
+        </a>
+
+        <a class="btn primary"
+           href="{{ url_for('disponibilidad') }}">
+            Ver asientos
+        </a>
+
+        {% if usuario_actual.rol == 'ADMIN' %}
+
+        <a class="btn primary"
+           href="{{ url_for('salidas') }}">
+            Programar salida
+        </a>
+
+        <a class="btn primary"
+           href="{{ url_for('apartados') }}">
+            Apartar lugar
+        </a>
+
+        <a class="btn primary"
+           href="{{ url_for('corte_caja') }}">
+            Corte de caja
+        </a>
+
+        {% endif %}
+
+    </div>
+
 </section>
+
 {% endblock %}

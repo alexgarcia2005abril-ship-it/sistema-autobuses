@@ -1,44 +1,13 @@
 
 <div class="heading">
-    <div>
-        <h1>{{ encabezado }}</h1>
-        <p>{{ descripcion }}</p>
-    </div>
+
+    <h1>{{ encabezado }}</h1>
+
+    <p>{{ descripcion }}</p>
+
 </div>
 
-<section class="panel" style="margin-bottom:20px;">
-
-    <h2>Seleccionar ruta</h2>
-
-    <form method="get" id="form-ruta">
-
-        <div class="field">
-            <label for="viaje_id">Ruta de autobús</label>
-
-            <select name="viaje_id"
-                    id="viaje_id"
-                    onchange="this.form.submit()"
-                    required>
-
-                {% for v in viajes %}
-
-                <option value="{{ v.id }}"
-                    {% if viaje and viaje.id == v.id %}
-                    selected
-                    {% endif %}>
-
-                    {{ rutas[v.codigo_ruta].nombre }}
-                    - {{ v.salida|fecha }}
-
-                </option>
-
-                {% endfor %}
-
-            </select>
-        </div>
-
-    </form>
-</section>
+{% include '_buscador_salida.html' %}
 
 {% if viaje %}
 
@@ -47,13 +16,18 @@
     <section class="panel">
 
         <div class="panel-heading">
+
             <h2>Seleccionar asiento</h2>
+
             <span class="chip">
-                {{ viaje.capacidad - ocupados }} disponibles
+                {{ viaje.capacidad - ocupados }}
+                disponibles
             </span>
+
         </div>
 
         {% set seleccionable = true %}
+
         {% include '_asientos.html' %}
 
     </section>
@@ -65,64 +39,73 @@
         <form method="post" id="form-operacion">
 
             <input type="hidden"
+                   name="_csrf"
+                   value="{{ csrf_token() }}">
+
+            <input type="hidden"
                    name="viaje_id"
                    value="{{ viaje.id }}">
 
             <div class="field">
+
                 <label for="destino">Destino</label>
 
                 <select name="destino"
                         id="destino"
                         required>
 
-                    <option value="">Selecciona un destino</option>
+                    <option value="">
+                        Selecciona un destino
+                    </option>
 
                     {% for nombre, precio in destinos.items() %}
 
                     <option value="{{ nombre }}"
-                            data-precio="{{ precio }}"
-                            {% if request.form.get('destino') == nombre %}
-                            selected
-                            {% endif %}>
+                            data-precio="{{ precio }}">
 
-                        {{ nombre }}
+                        {{ nombre }} - ${{ '%.2f'|format(precio) }}
 
                     </option>
 
                     {% endfor %}
 
                 </select>
+
             </div>
 
             <div class="field">
+
                 <label for="pasajero">
                     Nombre completo
                 </label>
 
                 <input type="text"
-                       name="pasajero"
                        id="pasajero"
+                       name="pasajero"
                        minlength="3"
                        maxlength="90"
-                       required
-                       value="{{ request.form.get('pasajero','') }}"
-                       placeholder="Nombre del pasajero">
+                       placeholder="Nombre del pasajero"
+                       required>
+
             </div>
 
             <div class="field">
+
                 <label for="telefono">Teléfono</label>
 
                 <input type="tel"
-                       name="telefono"
                        id="telefono"
+                       name="telefono"
+                       inputmode="numeric"
                        pattern="[0-9]{10}"
                        maxlength="10"
-                       required
-                       value="{{ request.form.get('telefono','') }}"
-                       placeholder="10 dígitos">
+                       placeholder="10 dígitos"
+                       required>
+
             </div>
 
             <div class="field">
+
                 <label>Asiento seleccionado</label>
 
                 <input type="text"
@@ -132,15 +115,23 @@
 
                 <input type="hidden"
                        name="asiento"
-                       id="asiento">
+                       id="asiento"
+                       required>
+
             </div>
 
             <div class="price-box">
+
                 <span>Precio del boleto</span>
-                <strong id="precio-total">$0.00 MXN</strong>
+
+                <strong id="precio-total">
+                    $0.00 MXN
+                </strong>
+
             </div>
 
-            <button type="submit" class="btn primary full">
+            <button type="submit"
+                    class="btn primary full">
                 {{ texto_boton }}
             </button>
 
@@ -149,9 +140,5 @@
     </section>
 
 </div>
-
-{% else %}
-
-<p>No hay rutas disponibles para vender boletos.</p>
 
 {% endif %}

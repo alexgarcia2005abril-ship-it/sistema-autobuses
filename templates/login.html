@@ -1,0 +1,64 @@
+
+{% extends 'base.html' %}
+
+{% block titulo_pagina %}
+Iniciar sesión
+{% endblock %}
+
+{% block contenido %}
+
+<section class="login-panel panel">
+
+    <div class="logo-autobus" aria-hidden="true">🚌</div>
+
+    <h2>Ingresar a Autobuses Alexito</h2>
+
+    <p>Acceso para administrador y personal autorizado.</p>
+
+    {% if not configurado %}
+
+    <div class="alert error">
+        No se ha creado el administrador inicial.
+        Configúralo desde la terminal antes de continuar.
+    </div>
+
+    {% endif %}
+
+    <form method="post"
+          action="{{ url_for('login') }}"
+          autocomplete="on">
+
+        <input type="hidden"
+               name="_csrf"
+               value="{{ csrf_token() }}">
+
+        <div class="field">
+            <label for="usuario">Usuario</label>
+
+            <input type="text"
+                   id="usuario"
+                   name="usuario"
+                   autocomplete="username"
+                   maxlength="32"
+                   required>
+        </div>
+
+        <div class="field">
+            <label for="contrasena">Contraseña</label>
+
+            <input type="password"
+                   id="contrasena"
+                   name="contrasena"
+                   autocomplete="current-password"
+                   required>
+        </div>
+
+        <button type="submit" class="btn primary full">
+            Iniciar sesión
+        </button>
+
+    </form>
+
+</section>
+
+{% endblock %}

@@ -2,75 +2,56 @@
 {% extends 'base.html' %}
 
 {% block titulo_pagina %}
-Corte de Caja
+Corte de caja
 {% endblock %}
 
 {% block contenido %}
 
 <div class="heading">
-    <div>
-        <h1>Corte de Caja</h1>
-        <p>
-            Control de ventas cobradas y recaudación
-            de Autobuses Alexito.
-        </p>
-    </div>
+    <h1>Corte de caja</h1>
+    <p>Ingresos cobrados, reembolsos y recaudación neta.</p>
 </div>
 
 <div class="resumen-caja">
 
     <section class="panel tarjeta-caja">
-        <h3>Dinero recaudado hoy</h3>
-
-        <h2>
-            ${{ '{:,.2f}'.format(corte_hoy.total) }}
-        </h2>
-
-        <p>Pesos mexicanos</p>
+        <h3>Recaudación neta hoy</h3>
+        <h2>${{ '{:,.2f}'.format(corte_hoy.neto) }}</h2>
+        <p>Ingresos menos reembolsos de hoy</p>
     </section>
 
     <section class="panel tarjeta-caja">
         <h3>Boletos cobrados hoy</h3>
-
         <h2>{{ corte_hoy.cantidad }}</h2>
-
-        <p>No incluye apartados sin confirmar</p>
+        <p>Incluye boletos posteriormente cancelados</p>
     </section>
 
 </div>
 
 <section class="panel caja-filtros">
+
     <h2>Consultar ventas por periodo</h2>
 
-    <form
-        method="get"
-        action="{{ url_for('corte_caja') }}"
-    >
+    <form method="get" action="{{ url_for('corte_caja') }}">
 
         <div class="filtros-caja">
 
             <div class="field">
                 <label for="desde">Fecha inicial</label>
-
-                <input
-                    type="date"
-                    id="desde"
-                    name="desde"
-                    value="{{ desde }}"
-                    required
-                >
+                <input type="date"
+                       id="desde"
+                       name="desde"
+                       value="{{ desde }}"
+                       required>
             </div>
 
             <div class="field">
                 <label for="hasta">Fecha final</label>
-
-                <input
-                    type="date"
-                    id="hasta"
-                    name="hasta"
-                    value="{{ hasta }}"
-                    required
-                >
+                <input type="date"
+                       id="hasta"
+                       name="hasta"
+                       value="{{ hasta }}"
+                       required>
             </div>
 
         </div>
@@ -79,34 +60,30 @@ Corte de Caja
             Consultar periodo
         </button>
 
-        <a
-            class="btn boton-pdf"
-            href="{{ url_for(
-                'corte_caja_pdf',
-                desde=desde,
-                hasta=hasta
-            ) }}"
-        >
+        <a class="btn boton-pdf"
+           href="{{ url_for('corte_caja_pdf', desde=desde, hasta=hasta) }}">
             Descargar PDF
         </a>
 
     </form>
+
 </section>
 
-<div class="resumen-caja">
+<div class="resumen-caja triple">
 
     <section class="panel tarjeta-caja">
-        <h3>Recaudación del periodo</h3>
-
-        <h2>
-            ${{ '{:,.2f}'.format(corte_periodo.total) }}
-        </h2>
+        <h3>Ingresos por ventas</h3>
+        <h2>${{ '{:,.2f}'.format(corte_periodo.total) }}</h2>
     </section>
 
     <section class="panel tarjeta-caja">
-        <h3>Boletos cobrados en el periodo</h3>
+        <h3>Reembolsos</h3>
+        <h2>${{ '{:,.2f}'.format(corte_periodo.reembolsos) }}</h2>
+    </section>
 
-        <h2>{{ corte_periodo.cantidad }}</h2>
+    <section class="panel tarjeta-caja">
+        <h3>Recaudación neta</h3>
+        <h2>${{ '{:,.2f}'.format(corte_periodo.neto) }}</h2>
     </section>
 
 </div>
@@ -114,48 +91,46 @@ Corte de Caja
 {% if corte_periodo.sin_precio %}
 
 <div class="alert error">
-    Hay {{ corte_periodo.sin_precio }}
-    boletos sin precio registrado.
-    No se sumaron a la recaudación.
+    {{ corte_periodo.sin_precio }} boletos no tienen
+    precio histórico registrado.
 </div>
 
 {% endif %}
 
 <section class="panel">
 
-    <h2>Recaudación por Ruta</h2>
+    <h2>Recaudación por ruta</h2>
 
     <div class="table-scroll">
+
         <table>
 
             <thead>
                 <tr>
                     <th>RUTA</th>
-                    <th>BOLETOS COBRADOS</th>
-                    <th>RECAUDACIÓN</th>
+                    <th>BOLETOS</th>
+                    <th>VENTAS</th>
+                    <th>REEMBOLSOS</th>
+                    <th>NETO</th>
                 </tr>
             </thead>
 
             <tbody>
 
-                {% for ruta in corte_periodo.por_ruta %}
+                {% for r in corte_periodo.por_ruta %}
 
                 <tr>
-                    <td>{{ ruta.nombre }}</td>
-
-                    <td>{{ ruta.cantidad }}</td>
-
-                    <td>
-                        ${{ '{:,.2f}'.format(ruta.total) }}
-                    </td>
+                    <td>{{ r.nombre }}</td>
+                    <td>{{ r.cantidad }}</td>
+                    <td>${{ '{:,.2f}'.format(r.total) }}</td>
+                    <td>${{ '{:,.2f}'.format(r.reembolsos) }}</td>
+                    <td>${{ '{:,.2f}'.format(r.total - r.reembolsos) }}</td>
                 </tr>
 
                 {% else %}
 
                 <tr>
-                    <td colspan="3">
-                        No hay ventas cobradas en el periodo.
-                    </td>
+                    <td colspan="5">Sin movimientos</td>
                 </tr>
 
                 {% endfor %}
@@ -163,80 +138,56 @@ Corte de Caja
             </tbody>
 
         </table>
+
     </div>
 
 </section>
 
 <section class="panel">
 
-    <h2>Detalle de Ventas del Periodo</h2>
+    <h2>Detalle de ventas cobradas</h2>
 
     <div class="table-scroll">
+
         <table>
 
             <thead>
                 <tr>
                     <th>FOLIO</th>
                     <th>FECHA DE COBRO</th>
-                    <th>RUTA</th>
-                    <th>DESTINO</th>
                     <th>ASIENTO</th>
                     <th>IMPORTE</th>
+                    <th>ESTADO POSTERIOR</th>
                 </tr>
             </thead>
 
             <tbody>
 
-                {% for boleto in corte_periodo.registros %}
+                {% for b in corte_periodo.registros %}
 
                 <tr>
-                    <td>
-                        #{{ '%05d'|format(boleto.id) }}
-                    </td>
+                    <td>#{{ '%05d'|format(b.id) }}</td>
+                    <td>{{ b.fecha_cobro }}</td>
+                    <td>{{ b.asiento }}</td>
 
                     <td>
-                        {{ boleto.fecha_cobro }}
-                    </td>
-
-                    <td>
-                        {% if boleto.codigo_ruta in rutas %}
-
-                            {{ rutas[boleto.codigo_ruta].nombre }}
-
+                        {% if b.precio_boleto is not none %}
+                            ${{ '%.2f'|format(b.precio_boleto) }}
                         {% else %}
-
-                            {{ boleto.codigo_ruta or 'Sin ruta' }}
-
-                        {% endif %}
-                    </td>
-
-                    <td>
-                        {{ boleto.destino_boleto or boleto.destino_final }}
-                    </td>
-
-                    <td>{{ boleto.asiento }}</td>
-
-                    <td>
-                        {% if boleto.precio_boleto is not none %}
-
-                            ${{ '{:,.2f}'.format(
-                                boleto.precio_boleto
-                            ) }}
-
-                        {% else %}
-
                             Sin precio
-
                         {% endif %}
+                    </td>
+
+                    <td>
+                        {{ 'Cancelado después' if b.cancelado else 'Vendido' }}
                     </td>
                 </tr>
 
                 {% else %}
 
                 <tr>
-                    <td colspan="6">
-                        No se encontraron ventas
-                        en el periodo seleccionado.
+                    <td colspan="5">
+                        No hay ventas cobradas durante este periodo.
                     </td>
                 </tr>
 
@@ -245,6 +196,58 @@ Corte de Caja
             </tbody>
 
         </table>
+
+    </div>
+
+</section>
+
+<section class="panel">
+
+    <h2>
+        Cancelaciones realizadas en el periodo
+        ({{ corte_periodo.cantidad_cancelaciones }})
+    </h2>
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>FOLIO ORIGINAL</th>
+                    <th>CANCELADO EN</th>
+                    <th>ASIENTO</th>
+                    <th>REEMBOLSO</th>
+                    <th>MOTIVO</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for c in corte_periodo.cancelaciones %}
+
+                <tr>
+                    <td>#{{ '%05d'|format(c.boleto_id) }}</td>
+                    <td>{{ c.cancelado_en }}</td>
+                    <td>{{ c.asiento }}</td>
+                    <td>${{ '{:,.2f}'.format(c.reembolso) }}</td>
+                    <td>{{ c.motivo }}</td>
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="5">
+                        No hay cancelaciones en este periodo.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
     </div>
 
 </section>

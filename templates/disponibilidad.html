@@ -8,47 +8,17 @@ Lugares disponibles
 {% block contenido %}
 
 <div class="heading">
-    <div>
-        <h1>Lugares disponibles y ocupados</h1>
-        <p>Consulta los asientos de cada ruta.</p>
-    </div>
+
+    <h1>Lugares disponibles y ocupados</h1>
+
+    <p>
+        Consulta los asientos de una ruta,
+        fecha y hora específicas.
+    </p>
+
 </div>
 
-<section class="panel" style="margin-bottom:20px;">
-
-    <h2>Seleccionar ruta</h2>
-
-    <form method="get">
-
-        <div class="field">
-
-            <label for="viaje_id">Ruta</label>
-
-            <select name="viaje_id"
-                    id="viaje_id"
-                    onchange="this.form.submit()">
-
-                {% for v in viajes %}
-
-                <option value="{{ v.id }}"
-                    {% if viaje and viaje.id == v.id %}
-                    selected
-                    {% endif %}>
-
-                    {{ rutas[v.codigo_ruta].nombre }}
-                    - {{ v.salida|fecha }}
-
-                </option>
-
-                {% endfor %}
-
-            </select>
-
-        </div>
-
-    </form>
-
-</section>
+{% include '_buscador_salida.html' %}
 
 {% if viaje %}
 
@@ -60,7 +30,9 @@ Lugares disponibles
     </div>
 
     <div>
-        <strong>{{ viaje.capacidad - estados|length }}</strong>
+        <strong>
+            {{ viaje.capacidad - estados|length }}
+        </strong>
         <span>Disponibles</span>
     </div>
 
@@ -84,20 +56,17 @@ Lugares disponibles
 
     <section class="panel">
 
-        <div class="panel-heading">
-            <h2>Mapa de asientos</h2>
-        </div>
+        <h2>Mapa de asientos</h2>
 
         {% set seleccionable = false %}
+
         {% include '_asientos.html' %}
 
     </section>
 
     <section class="panel">
 
-        <div class="panel-heading">
-            <h2>Asientos ocupados</h2>
-        </div>
+        <h2>Asientos ocupados</h2>
 
         <div class="table-scroll">
 
@@ -106,10 +75,13 @@ Lugares disponibles
                 <thead>
                     <tr>
                         <th>ASIENTO</th>
+                        <th>ESTADO</th>
+
+                        {% if usuario_actual.rol == 'ADMIN' %}
                         <th>PASAJERO</th>
                         <th>DESTINO</th>
-                        <th>ESTADO</th>
                         <th>ACCIÓN</th>
+                        {% endif %}
                     </tr>
                 </thead>
 
@@ -121,11 +93,15 @@ Lugares disponibles
 
                         <td>{{ b.asiento }}</td>
 
+                        <td>{{ b.estado }}</td>
+
+                        {% if usuario_actual.rol == 'ADMIN' %}
+
                         <td>{{ b.pasajero }}</td>
 
-                        <td>{{ b.destino_boleto or 'Sin registro' }}</td>
-
-                        <td>{{ b.estado }}</td>
+                        <td>
+                            {{ b.destino_boleto or 'Sin registro' }}
+                        </td>
 
                         <td>
 
@@ -136,17 +112,27 @@ Lugares disponibles
                                 <form method="post"
                                       action="{{ url_for('confirmar_apartado', boleto_id=b.id) }}">
 
-                                    <button class="small-action">
-                                        Confirmar
+                                    <input type="hidden"
+                                           name="_csrf"
+                                           value="{{ csrf_token() }}">
+
+                                    <button type="submit"
+                                            class="small-action">
+                                        Confirmar cobro
                                     </button>
 
                                 </form>
 
                                 <form method="post"
                                       action="{{ url_for('liberar_apartado', boleto_id=b.id) }}"
-                                      onsubmit="return confirm('¿Liberar asiento?')">
+                                      onsubmit="return confirm('¿Liberar apartado?')">
 
-                                    <button class="small-action danger">
+                                    <input type="hidden"
+                                           name="_csrf"
+                                           value="{{ csrf_token() }}">
+
+                                    <button type="submit"
+                                            class="small-action danger">
                                         Liberar
                                     </button>
 
@@ -161,6 +147,8 @@ Lugares disponibles
                             {% endif %}
 
                         </td>
+
+                        {% endif %}
 
                     </tr>
 
@@ -183,10 +171,6 @@ Lugares disponibles
     </section>
 
 </div>
-
-{% else %}
-
-<p>No hay rutas disponibles.</p>
 
 {% endif %}
 

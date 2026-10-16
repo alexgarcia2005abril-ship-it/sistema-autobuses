@@ -1,0 +1,147 @@
+
+{% extends 'base.html' %}
+
+{% block titulo_pagina %}
+Programar salidas
+{% endblock %}
+
+{% block contenido %}
+
+<div class="heading">
+    <h1>Programar salidas</h1>
+    <p>Define manualmente la ruta, fecha y hora.</p>
+</div>
+
+<section class="panel">
+
+    <h2>Nueva salida</h2>
+
+    <form method="post" class="selector-salida">
+
+        <input type="hidden"
+               name="_csrf"
+               value="{{ csrf_token() }}">
+
+        <div class="field">
+
+            <label for="ruta">Ruta</label>
+
+            <select id="ruta" name="ruta" required>
+
+                <option value="">Seleccionar</option>
+
+                {% for codigo, info in rutas.items() %}
+
+                <option value="{{ codigo }}">
+                    {{ info.nombre }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+        <div class="field">
+
+            <label for="fecha">Fecha de salida</label>
+
+            <input type="date"
+                   id="fecha"
+                   name="fecha"
+                   min="{{ hoy }}"
+                   required>
+
+        </div>
+
+        <div class="field">
+
+            <label for="hora">Hora de salida</label>
+
+            <input type="time"
+                   id="hora"
+                   name="hora"
+                   required>
+
+        </div>
+
+        <button class="btn primary" type="submit">
+            Guardar salida
+        </button>
+
+    </form>
+
+</section>
+
+<section class="panel">
+
+    <h2>Salidas futuras programadas</h2>
+
+    <div class="table-scroll">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>RUTA</th>
+                    <th>FECHA Y HORA</th>
+                    <th>OCUPADOS</th>
+                    <th>DISPONIBLES</th>
+                    <th>ACCIÓN</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for v in viajes %}
+
+                <tr>
+
+                    <td>{{ rutas[v.codigo_ruta].nombre }}</td>
+
+                    <td>{{ v.salida|fecha }}</td>
+
+                    <td>{{ v.ocupados }}</td>
+
+                    <td>{{ v.capacidad - v.ocupados }}</td>
+
+                    <td>
+
+                        <form method="post"
+                              action="{{ url_for('eliminar_salida', viaje_id=v.id) }}"
+                              onsubmit="return confirm('¿Eliminar esta salida vacía?')">
+
+                            <input type="hidden"
+                                   name="_csrf"
+                                   value="{{ csrf_token() }}">
+
+                            <button class="small-action danger"
+                                    type="submit">
+                                Eliminar
+                            </button>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="5" class="empty">
+                        No hay salidas futuras programadas.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+{% endblock %}
