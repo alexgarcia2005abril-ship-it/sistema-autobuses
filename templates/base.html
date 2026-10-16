@@ -15,6 +15,10 @@
         <a class="{{ 'activo' if activo == 'apartados' else '' }}" href="{{ url_for('apartados') }}">Apartar Lugar</a>
         <a class="{{ 'activo' if activo == 'boletos' else '' }}" href="{{ url_for('boletos') }}">Boletos Vendidos</a>
         <a class="{{ 'activo' if activo == 'disponibilidad' else '' }}" href="{{ url_for('disponibilidad') }}">Lugares Disponibles</a>
+        <a href="{{ url_for('corte_caja') }}"  class="{% if activo == 'corte' %}active{% endif %}">
+    Corte de Caja
+</a>
+
     </nav>
 </header>
 <main class="contenido">

@@ -1,19 +1,37 @@
 
 import sqlite3
+
 from pathlib import Path
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from flask import g
+
 from base_de_datos.rutas import RUTAS
 
-DB_PATH = Path(__file__).resolve().parent / "central_autobuses.db"
+
+DB_PATH = (
+    Path(__file__).resolve().parent
+    / "central_autobuses.db"
+)
 
 
 def obtener_db():
     if "db" not in g:
-        conexion = sqlite3.connect(DB_PATH, timeout=15)
+        conexion = sqlite3.connect(
+            DB_PATH,
+            timeout=15
+        )
+
         conexion.row_factory = sqlite3.Row
-        conexion.execute("PRAGMA foreign_keys = ON")
-        conexion.execute("PRAGMA busy_timeout = 15000")
+
+        conexion.execute(
+            "PRAGMA foreign_keys = ON"
+        )
+
+        conexion.execute(
+            "PRAGMA busy_timeout = 15000"
+        )
+
         g.db = conexion
 
     return g.db
@@ -27,12 +45,20 @@ def cerrar_db(error=None):
 
 
 def inicializar_db():
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    DB_PATH.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
-    con = sqlite3.connect(DB_PATH, timeout=15)
+    con = sqlite3.connect(
+        DB_PATH,
+        timeout=15
+    )
 
     try:
-        con.execute("PRAGMA foreign_keys = ON")
+        con.execute(
+            "PRAGMA foreign_keys = ON"
+        )
 
         con.executescript("""
             CREATE TABLE IF NOT EXISTS viajes (
@@ -46,7 +72,8 @@ def inicializar_db():
 
             CREATE TABLE IF NOT EXISTS boletos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                viaje_id INTEGER NOT NULL REFERENCES viajes(id),
+                viaje_id INTEGER NOT NULL
+                    REFERENCES viajes(id),
                 asiento INTEGER NOT NULL,
                 pasajero TEXT NOT NULL,
                 telefono TEXT NOT NULL,
@@ -58,30 +85,52 @@ def inicializar_db():
             );
         """)
 
+        con.execute("BEGIN IMMEDIATE")
+
         columnas_viajes = {
             fila[1]
-            for fila in con.execute("PRAGMA table_info(viajes)")
+            for fila in con.execute(
+                "PRAGMA table_info(viajes)"
+            )
         }
 
         if "codigo_ruta" not in columnas_viajes:
-            con.execute(
-                "ALTER TABLE viajes ADD COLUMN codigo_ruta TEXT"
-            )
+            con.execute("""
+                ALTER TABLE viajes
+                ADD COLUMN codigo_ruta TEXT
+            """)
 
         columnas_boletos = {
             fila[1]
-            for fila in con.execute("PRAGMA table_info(boletos)")
+            for fila in con.execute(
+                "PRAGMA table_info(boletos)"
+            )
         }
 
         if "destino_boleto" not in columnas_boletos:
-            con.execute(
-                "ALTER TABLE boletos ADD COLUMN destino_boleto TEXT"
-            )
+            con.execute("""
+                ALTER TABLE boletos
+                ADD COLUMN destino_boleto TEXT
+            """)
 
         if "precio_boleto" not in columnas_boletos:
-            con.execute(
-                "ALTER TABLE boletos ADD COLUMN precio_boleto REAL"
-            )
+            con.execute("""
+                ALTER TABLE boletos
+                ADD COLUMN precio_boleto REAL
+            """)
+
+        if "cobrado_en" not in columnas_boletos:
+            con.execute("""
+                ALTER TABLE boletos
+                ADD COLUMN cobrado_en TEXT
+            """)
+
+        con.execute("""
+            UPDATE boletos
+            SET cobrado_en = creado_en
+            WHERE estado = 'VENDIDO'
+              AND cobrado_en IS NULL
+        """)
 
         con.execute("""
             CREATE INDEX IF NOT EXISTS idx_boletos_viaje
@@ -93,28 +142,49 @@ def inicializar_db():
             ON viajes(codigo_ruta, salida)
         """)
 
-        manana = datetime.now().date() + timedelta(days=1)
+        con.execute("""
+            CREATE INDEX IF NOT EXISTS idx_boletos_cobrado
+            ON boletos(estado, cobrado_en)
+        """)
+
+        manana = (
+            datetime.now(
+                ZoneInfo("America/Mexico_City")
+            ).date()
+            + timedelta(days=1)
+        )
 
         for codigo, ruta in RUTAS.items():
+
             fecha_salida = (
-                f"{manana.isoformat()}T{ruta['hora_demo']}"
+                f"{manana.isoformat()}"
+                f"T{ruta['hora_demo']}"
             )
 
             existe = con.execute("""
-                SELECT id FROM viajes
+                SELECT id
+                FROM viajes
                 WHERE codigo_ruta = ?
-                AND salida = ?
-            """, (codigo, fecha_salida)).fetchone()
+                  AND salida = ?
+            """, (
+                codigo,
+                fecha_salida
+            )).fetchone()
 
             if existe is None:
+
                 precio_final = ruta["destinos"][
                     ruta["destino_final"]
                 ]
 
                 con.execute("""
                     INSERT INTO viajes (
-                        origen, destino, salida,
-                        precio, capacidad, codigo_ruta
+                        origen,
+                        destino,
+                        salida,
+                        precio,
+                        capacidad,
+                        codigo_ruta
                     )
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, (
