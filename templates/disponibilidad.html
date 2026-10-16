@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block titulo_pagina %}Disponibilidad{% endblock %}
+{% block contenido %}
+<div class="heading">
+    <div>
+        <div class="eyebrow">CONTROL DE ASIENTOS</div>
+        <h1>Lugares disponibles y ocupados</h1>
+        <p>Visualiza la ocupación de cada autobús y administra los apartados.</p>
+    </div>
+</div>
+
+{% if viaje %}
+<div class="mini-stats">
+    <div><strong>{{ viaje.capacidad }}</strong><span>Capacidad</span></div>
+    <div><strong>{{ viaje.capacidad - estados|length }}</strong><span>Disponibles</span></div>
+    <div><strong>{{ estados.values()|select('equalto','VENDIDO')|list|length }}</strong><span>Vendidos</span></div>
+    <div><strong>{{ estados.values()|select('equalto','APARTADO')|list|length }}</strong><span>Apartados</span></div>
+</div>
+
+<div class="work-grid">
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Mapa de asientos</h2>
+                <p>Vista actual del autobús</p>
+            </div>
+        </div>
+        {% set seleccionable = false %}
+        {% include '_asientos.html' %}
+    </section>
+
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <h2>Asientos ocupados</h2>
+                <p>Ventas y apartados de este viaje.</p>
+            </div>
+        </div>
+
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ASIENTO</th>
+                        <th>PASAJERO</th>
+                        <th>ESTADO</th>
+                        <th>ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in boletos %}
+                    <tr>
+                        <td><strong>#{{ b.asiento }}</strong></td>
+                        <td>{{ b.pasajero }}</td>
+                        <td><span class="pill {{ 'sold-pill' if b.estado=='VENDIDO' else 'reserve-pill' }}">{{ b.estado|capitalize }}</span></td>
+                        <td>
+                            {% if b.estado=='APARTADO' %}
+                            <div class="actions">
+                                <form method="post" action="{{ url_for('confirmar_apartado', boleto_id=b.id) }}">
+                                    <button class="small-action" title="Marcar como vendido">Confirmar</button>
+                                </form>
+                                <form method="post" action="{{ url_for('liberar_apartado', boleto_id=b.id) }}" onsubmit="return confirm('¿Liberar este asiento apartado?')">
+                                    <button class="small-action danger" title="Liberar asiento">Liberar</button>
+                                </form>
+                            </div>
+                            {% else %}
+                            —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td class="empty" colspan="4">Todos los lugares están disponibles.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% else %}
+<p>No hay viajes registrados.</p>
+{% endif %}
+{% endblock %}

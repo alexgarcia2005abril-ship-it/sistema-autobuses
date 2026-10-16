@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block titulo_pagina %}Inicio{% endblock %}
+{% block contenido %}
+<section class="contenedor-inicio">
+    <div class="logo-autobus" aria-hidden="true">🚌</div>
+    <h2>Bienvenido a la Central de Autobuses</h2>
+    <p>Sistema de administración de boletos, reservaciones y disponibilidad de asientos.</p>
+    <div class="botones-inicio">
+        <a class="btn primary" href="{{ url_for('venta') }}">Vender Boleto</a>
+        <a class="btn primary" href="{{ url_for('apartados') }}">Apartar Lugar</a>
+        <a class="btn primary" href="{{ url_for('boletos') }}">Boletos Vendidos</a>
+        <a class="btn primary" href="{{ url_for('disponibilidad') }}">Ver Asientos</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo_pagina %}Central de Autobuses{% endblock %} - Central de Autobuses</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body>
+<header class="encabezado">
+    <h1>Venta de Boletos de Autobús</h1>
+    <nav>
+        <a class="{{ 'activo' if activo == 'inicio' else '' }}" href="{{ url_for('index') }}">Inicio</a>
+        <a class="{{ 'activo' if activo == 'venta' else '' }}" href="{{ url_for('venta') }}">Vender Boleto</a>
+        <a class="{{ 'activo' if activo == 'apartados' else '' }}" href="{{ url_for('apartados') }}">Apartar Lugar</a>
+        <a class="{{ 'activo' if activo == 'boletos' else '' }}" href="{{ url_for('boletos') }}">Boletos Vendidos</a>
+        <a class="{{ 'activo' if activo == 'disponibilidad' else '' }}" href="{{ url_for('disponibilidad') }}">Lugares Disponibles</a>
+    </nav>
+</header>
+<main class="contenido">
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% for categoria, mensaje in mensajes %}
+            <div class="alert {{ categoria }}">{{ mensaje }}</div>
+        {% endfor %}
+    {% endwith %}
+    {% block contenido %}{% endblock %}
+</main>
+<footer>Sistema de Alexito</footer>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
