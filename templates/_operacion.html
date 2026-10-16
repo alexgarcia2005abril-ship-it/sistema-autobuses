@@ -1,55 +1,157 @@
+
 <div class="heading">
     <div>
-        <div class="eyebrow">GESTIÓN DE BOLETAJE</div>
         <h1>{{ encabezado }}</h1>
         <p>{{ descripcion }}</p>
     </div>
 </div>
 
-{% if viaje %}
-<div class="work-grid">
-    <section class="panel">
-        <div class="panel-heading">
-            <div>
-                <h2>Seleccionar asiento</h2>
-            </div>
-            <span class="chip">{{ viaje.capacidad - ocupados }} disponibles</span>
+<section class="panel" style="margin-bottom:20px;">
+
+    <h2>Seleccionar ruta</h2>
+
+    <form method="get" id="form-ruta">
+
+        <div class="field">
+            <label for="viaje_id">Ruta de autobús</label>
+
+            <select name="viaje_id"
+                    id="viaje_id"
+                    onchange="this.form.submit()"
+                    required>
+
+                {% for v in viajes %}
+
+                <option value="{{ v.id }}"
+                    {% if viaje and viaje.id == v.id %}
+                    selected
+                    {% endif %}>
+
+                    {{ rutas[v.codigo_ruta].nombre }}
+                    - {{ v.salida|fecha }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
         </div>
+
+    </form>
+</section>
+
+{% if viaje %}
+
+<div class="work-grid">
+
+    <section class="panel">
+
+        <div class="panel-heading">
+            <h2>Seleccionar asiento</h2>
+            <span class="chip">
+                {{ viaje.capacidad - ocupados }} disponibles
+            </span>
+        </div>
+
         {% set seleccionable = true %}
         {% include '_asientos.html' %}
+
     </section>
 
     <section class="panel form-panel">
-        <div class="panel-heading">
-            <div>
-                <h2>Datos del pasajero</h2>
-                <p>Completa la información para {{ accion }}.</p>
-            </div>
-        </div>
+
+        <h2>Datos del pasajero</h2>
 
         <form method="post" id="form-operacion">
-            <input type="hidden" name="viaje_id" value="{{ viaje.id }}">
+
+            <input type="hidden"
+                   name="viaje_id"
+                   value="{{ viaje.id }}">
 
             <div class="field">
-                <label for="pasajero">Nombre completo</label>
-                <input id="pasajero" name="pasajero" maxlength="90" minlength="3" required placeholder="Ej. María López" value="{{ request.form.get('pasajero','') }}">
+                <label for="destino">Destino</label>
+
+                <select name="destino"
+                        id="destino"
+                        required>
+
+                    <option value="">Selecciona un destino</option>
+
+                    {% for nombre, precio in destinos.items() %}
+
+                    <option value="{{ nombre }}"
+                            data-precio="{{ precio }}"
+                            {% if request.form.get('destino') == nombre %}
+                            selected
+                            {% endif %}>
+
+                        {{ nombre }}
+
+                    </option>
+
+                    {% endfor %}
+
+                </select>
             </div>
 
             <div class="field">
-                <label for="telefono">Teléfono (10 dígitos)</label>
-                <input id="telefono" name="telefono" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required placeholder="9511234567" value="{{ request.form.get('telefono','') }}">
+                <label for="pasajero">
+                    Nombre completo
+                </label>
+
+                <input type="text"
+                       name="pasajero"
+                       id="pasajero"
+                       minlength="3"
+                       maxlength="90"
+                       required
+                       value="{{ request.form.get('pasajero','') }}"
+                       placeholder="Nombre del pasajero">
             </div>
 
             <div class="field">
-                <label for="asiento-mostrar">Asiento seleccionado</label>
-                <input type="text" id="asiento-mostrar" readonly placeholder="Selecciona un asiento en el mapa">
-                <input type="hidden" id="asiento" name="asiento">
+                <label for="telefono">Teléfono</label>
+
+                <input type="tel"
+                       name="telefono"
+                       id="telefono"
+                       pattern="[0-9]{10}"
+                       maxlength="10"
+                       required
+                       value="{{ request.form.get('telefono','') }}"
+                       placeholder="10 dígitos">
             </div>
 
-            <button type="submit" class="btn primary full">{{ texto_boton }} →</button>
+            <div class="field">
+                <label>Asiento seleccionado</label>
+
+                <input type="text"
+                       id="asiento-mostrar"
+                       readonly
+                       placeholder="Selecciona un asiento">
+
+                <input type="hidden"
+                       name="asiento"
+                       id="asiento">
+            </div>
+
+            <div class="price-box">
+                <span>Precio del boleto</span>
+                <strong id="precio-total">$0.00 MXN</strong>
+            </div>
+
+            <button type="submit" class="btn primary full">
+                {{ texto_boton }}
+            </button>
+
         </form>
+
     </section>
+
 </div>
+
 {% else %}
-<p>No hay viajes registrados.</p>
+
+<p>No hay rutas disponibles para vender boletos.</p>
+
 {% endif %}
